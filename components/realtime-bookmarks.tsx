@@ -24,23 +24,23 @@ export function RealtimeBookmarks({ serverBookmarks }: { serverBookmarks: Bookma
     }, [serverBookmarks])
 
     useEffect(() => {
+        // We will separate channels to debug if it helps, and use specific filters
         const channel = supabase
             .channel('realtime-bookmarks')
             .on(
                 'postgres_changes',
                 {
-                    event: '*',
+                    event: '*', // Listen to all events
                     schema: 'public',
                     table: 'bookmarks',
                 },
                 (payload) => {
-                    console.log('Realtime payload:', payload)
+                    console.log('Realtime Event Received:', payload)
                     if (payload.eventType === 'INSERT') {
-                        // For RLS enabled tables, we might only get partial data if the policy restricts it
-                        // But if we are the user inserting, we should see it.
-                        // We'll cast carefully.
+                        console.log('INSERT payload:', payload.new)
                         setBookmarks((prev) => [...prev, payload.new as Bookmark])
                     } else if (payload.eventType === 'DELETE') {
+                        console.log('DELETE payload:', payload.old)
                         setBookmarks((prev) => prev.filter((b) => b.id !== payload.old.id))
                     } else if (payload.eventType === 'UPDATE') {
                         setBookmarks((prev) => prev.map((b) => b.id === payload.new.id ? payload.new as Bookmark : b))
@@ -48,7 +48,7 @@ export function RealtimeBookmarks({ serverBookmarks }: { serverBookmarks: Bookma
                 }
             )
             .subscribe((status) => {
-                console.log('Realtime Status:', status)
+                console.log('Subscription Status:', status)
             })
 
         return () => {
