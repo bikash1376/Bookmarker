@@ -1,0 +1,1 @@
+Bookmarker is a smart bookmark manager app built with Next.js, Supabase, and Tailwind CSS.
