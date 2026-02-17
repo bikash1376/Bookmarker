@@ -15,7 +15,7 @@ interface Bookmark {
     created_at: string
 }
 
-export function RealtimeBookmarks({ serverBookmarks }: { serverBookmarks: Bookmark[] }) {
+export function RealtimeBookmarks({ serverBookmarks, userId }: { serverBookmarks: Bookmark[], userId: string }) {
     const [bookmarks, setBookmarks] = useState<Bookmark[]>(serverBookmarks)
     const supabase = createClient()
 
@@ -24,37 +24,60 @@ export function RealtimeBookmarks({ serverBookmarks }: { serverBookmarks: Bookma
     }, [serverBookmarks])
 
     useEffect(() => {
-        // We will separate channels to debug if it helps, and use specific filters
-        const channel = supabase
-            .channel('realtime-bookmarks')
+        // Channel 1: INSERT and UPDATE (filtered by user_id)
+        const dataChannel = supabase
+            .channel('realtime-bookmarks-data')
             .on(
                 'postgres_changes',
                 {
-                    event: '*', // Listen to all events
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'bookmarks',
+                    filter: `user_id=eq.${userId}`,
+                },
+                (payload) => {
+                    console.log('INSERT payload:', payload.new)
+                    setBookmarks((prev) => [...prev, payload.new as Bookmark])
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'bookmarks',
+                    filter: `user_id=eq.${userId}`,
+                },
+                (payload) => {
+                    setBookmarks((prev) => prev.map((b) => b.id === payload.new.id ? payload.new as Bookmark : b))
+                }
+            )
+            .subscribe()
+
+        // Channel 2: DELETE (global, filter client-side if needed)
+        // The DELETE payload might not have user_id if not REPLICA IDENTITY FULL
+        const deleteChannel = supabase
+            .channel('realtime-bookmarks-delete')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'DELETE',
                     schema: 'public',
                     table: 'bookmarks',
                 },
                 (payload) => {
-                    console.log('Realtime Event Received:', payload)
-                    if (payload.eventType === 'INSERT') {
-                        console.log('INSERT payload:', payload.new)
-                        setBookmarks((prev) => [...prev, payload.new as Bookmark])
-                    } else if (payload.eventType === 'DELETE') {
-                        console.log('DELETE payload:', payload.old)
-                        setBookmarks((prev) => prev.filter((b) => b.id !== payload.old.id))
-                    } else if (payload.eventType === 'UPDATE') {
-                        setBookmarks((prev) => prev.map((b) => b.id === payload.new.id ? payload.new as Bookmark : b))
-                    }
+                    console.log('DELETE payload:', payload.old)
+                    // Only delete if we have it in our state
+                    setBookmarks((prev) => prev.filter((b) => b.id !== payload.old.id))
                 }
             )
-            .subscribe((status) => {
-                console.log('Subscription Status:', status)
-            })
+            .subscribe()
 
         return () => {
-            supabase.removeChannel(channel)
+            supabase.removeChannel(dataChannel)
+            supabase.removeChannel(deleteChannel)
         }
-    }, [supabase])
+    }, [supabase, userId])
 
     return (
         <div className="w-full space-y-4">

@@ -37,7 +37,7 @@ export default async function Home() {
 
           <AddBookmark />
 
-          <RealtimeBookmarks serverBookmarks={bookmarks || []} />
+          <RealtimeBookmarks serverBookmarks={bookmarks || []} userId={user.id} />
         </div>
       </main>
 
