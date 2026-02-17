@@ -34,8 +34,11 @@ export function RealtimeBookmarks({ serverBookmarks }: { serverBookmarks: Bookma
                     table: 'bookmarks',
                 },
                 (payload) => {
-                    console.log('Realtime payload:', payload) // Debugging
+                    console.log('Realtime payload:', payload)
                     if (payload.eventType === 'INSERT') {
+                        // For RLS enabled tables, we might only get partial data if the policy restricts it
+                        // But if we are the user inserting, we should see it.
+                        // We'll cast carefully.
                         setBookmarks((prev) => [...prev, payload.new as Bookmark])
                     } else if (payload.eventType === 'DELETE') {
                         setBookmarks((prev) => prev.filter((b) => b.id !== payload.old.id))
@@ -45,7 +48,7 @@ export function RealtimeBookmarks({ serverBookmarks }: { serverBookmarks: Bookma
                 }
             )
             .subscribe((status) => {
-                console.log('Realtime status:', status)
+                console.log('Realtime Status:', status)
             })
 
         return () => {
@@ -63,15 +66,15 @@ export function RealtimeBookmarks({ serverBookmarks }: { serverBookmarks: Bookma
                 bookmarks.map((bookmark) => (
                     <Card
                         key={bookmark.id}
-                        className="flex items-center justify-between p-4 group hover:shadow-md transition-all"
+                        className="flex items-center justify-between p-4 group hover:shadow-md transition-all animate-in fade-in slide-in-from-bottom-2 duration-300"
                     >
                         <div className="flex-1 min-w-0 mr-4">
-                            <h3 className="font-medium truncate text-foreground">{bookmark.title}</h3>
+                            <h3 className="font-semibold truncate text-foreground">{bookmark.title}</h3>
                             <a
                                 href={bookmark.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-sm text-muted-foreground hover:text-primary hover:underline flex items-center gap-1 truncate w-fit cursor-pointer"
+                                className="text-xs text-muted-foreground hover:text-primary hover:underline flex items-center gap-1 truncate w-fit cursor-pointer mt-1"
                             >
                                 {bookmark.url}
                                 <ExternalLink className="h-3 w-3" />
