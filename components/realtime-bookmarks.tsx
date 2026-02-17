@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Trash2, ExternalLink } from 'lucide-react'
 import { deleteBookmark } from '@/app/bookmarks/actions'
+import { Card } from '@/components/ui/card'
 
 interface Bookmark {
     id: number
@@ -19,7 +20,6 @@ export function RealtimeBookmarks({ serverBookmarks }: { serverBookmarks: Bookma
     const supabase = createClient()
 
     useEffect(() => {
-        // Sync with server data initially
         setBookmarks(serverBookmarks)
     }, [serverBookmarks])
 
@@ -34,6 +34,7 @@ export function RealtimeBookmarks({ serverBookmarks }: { serverBookmarks: Bookma
                     table: 'bookmarks',
                 },
                 (payload) => {
+                    console.log('Realtime payload:', payload) // Debugging
                     if (payload.eventType === 'INSERT') {
                         setBookmarks((prev) => [...prev, payload.new as Bookmark])
                     } else if (payload.eventType === 'DELETE') {
@@ -43,7 +44,9 @@ export function RealtimeBookmarks({ serverBookmarks }: { serverBookmarks: Bookma
                     }
                 }
             )
-            .subscribe()
+            .subscribe((status) => {
+                console.log('Realtime status:', status)
+            })
 
         return () => {
             supabase.removeChannel(channel)
@@ -51,22 +54,24 @@ export function RealtimeBookmarks({ serverBookmarks }: { serverBookmarks: Bookma
     }, [supabase])
 
     return (
-        <div className="w-full max-w-md space-y-4">
+        <div className="w-full space-y-4">
             {bookmarks.length === 0 ? (
-                <p className="text-center text-gray-500">No bookmarks yet. Add one!</p>
+                <div className="text-center p-8 border rounded-lg border-dashed text-muted-foreground bg-muted/50">
+                    No bookmarks yet. Add one!
+                </div>
             ) : (
                 bookmarks.map((bookmark) => (
-                    <div
+                    <Card
                         key={bookmark.id}
-                        className="flex items-center justify-between p-4 border rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow"
+                        className="flex items-center justify-between p-4 group hover:shadow-md transition-all"
                     >
                         <div className="flex-1 min-w-0 mr-4">
-                            <h3 className="font-medium truncate">{bookmark.title}</h3>
+                            <h3 className="font-medium truncate text-foreground">{bookmark.title}</h3>
                             <a
                                 href={bookmark.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-sm text-blue-500 hover:underline flex items-center gap-1 truncate"
+                                className="text-sm text-muted-foreground hover:text-primary hover:underline flex items-center gap-1 truncate w-fit cursor-pointer"
                             >
                                 {bookmark.url}
                                 <ExternalLink className="h-3 w-3" />
@@ -76,11 +81,12 @@ export function RealtimeBookmarks({ serverBookmarks }: { serverBookmarks: Bookma
                             variant="ghost"
                             size="icon"
                             onClick={() => deleteBookmark(bookmark.id)}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer opacity-70 group-hover:opacity-100 transition-opacity"
                         >
                             <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Delete</span>
                         </Button>
-                    </div>
+                    </Card>
                 ))
             )}
         </div>

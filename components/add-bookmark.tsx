@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { addBookmark } from '@/app/bookmarks/actions'
 import { Plus } from 'lucide-react'
 import { useRef } from 'react'
@@ -15,24 +16,25 @@ export function AddBookmark() {
                 formRef.current?.reset()
             }}
             ref={formRef}
-            className="flex w-full max-w-sm items-center space-x-2 mb-8"
+            className="flex w-full flex-col sm:flex-row items-center gap-2 mb-8"
         >
-            <input
+            <Input
                 type="text"
                 name="title"
                 placeholder="Title"
                 required
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1"
             />
-            <input
+            <Input
                 type="url"
                 name="url"
                 placeholder="URL (https://...)"
                 required
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1"
             />
-            <Button type="submit" size="icon">
+            <Button type="submit" size="icon" className="shrink-0 cursor-pointer">
                 <Plus className="h-4 w-4" />
+                <span className="sr-only">Add Bookmark</span>
             </Button>
         </form>
     )
